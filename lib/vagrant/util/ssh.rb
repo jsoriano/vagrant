@@ -52,20 +52,22 @@ module Vagrant
       # @param [Hash] opts These are additional options that are supported
       #   by exec.
       def self.exec(ssh_info, opts={})
-        # If we're running Windows, raise an exception since we currently
-        # still don't support exec-ing into SSH. In the future this should
-        # certainly be possible if we can detect we're in an environment that
-        # supports it.
-        if Platform.windows?
-          raise Errors::SSHUnavailableWindows,
-            :host => ssh_info[:host],
-            :port => ssh_info[:port],
-            :username => ssh_info[:username],
-            :key_path => ssh_info[:private_key_path]
-        end
-
         # Verify that we have SSH available on the system.
-        raise Errors::SSHUnavailable if !Kernel.system("which ssh > /dev/null 2>&1")
+        if !Util::FileUtil.which("ssh")
+          # If we're running Windows, raise an exception since we currently
+          # still don't support exec-ing into SSH. In the future this should
+          # certainly be possible if we can detect we're in an environment that
+          # supports it.
+          if Platform.windows?
+            raise Errors::SSHUnavailableWindows,
+              :host => ssh_info[:host],
+              :port => ssh_info[:port],
+              :username => ssh_info[:username],
+              :key_path => ssh_info[:private_key_path]
+          else
+            raise Errors::SSHUnavailable
+          end
+        end
 
         # If plain mode is enabled then we don't do any authentication (we don't
         # set a user or an identity file)
